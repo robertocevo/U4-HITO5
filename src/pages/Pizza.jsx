@@ -1,24 +1,46 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useCart } from '../context/CartContext';
 
-const Pizza = ({ addToCart }) => {
+const Pizza = () => {
   const { id } = useParams();
   const [pizza, setPizza] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/pizzas/${id}`)
-      .then(response => setPizza(response.data))
-      .catch(error => console.error('Error:', error));
+    const fetchPizza = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/pizzas/${id}`);
+        setPizza(response.data);
+      } catch (err) {
+        setError('Error al cargar la pizza');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPizza();
   }, [id]);
 
-  if (!pizza) return (
+  if (loading) return (
     <div className="container my-5 text-center">
       <div className="spinner-border text-danger" role="status">
         <span className="visually-hidden">Cargando...</span>
       </div>
     </div>
   );
+
+  if (error) return (
+    <div className="container my-5">
+      <div className="alert alert-danger">{error}</div>
+    </div>
+  );
+
+  if (!pizza) return null;
 
   return (
     <div className="container my-5">
@@ -35,7 +57,7 @@ const Pizza = ({ addToCart }) => {
           <h1 className="fw-bold mb-4">{pizza.name}</h1>
           <p className="lead mb-4">{pizza.desc}</p>
           
-          <div className="card mb-4">
+          <div className="card mb-4 border-0 shadow-sm">
             <div className="card-body">
               <h3 className="card-title">Ingredientes</h3>
               <ul className="list-group list-group-flush">
@@ -52,7 +74,7 @@ const Pizza = ({ addToCart }) => {
             <h2 className="text-danger mb-0">${pizza.price.toLocaleString()}</h2>
             <button 
               onClick={() => addToCart(pizza)}
-              className="btn btn-danger btn-lg"
+              className="btn btn-danger btn-lg px-4 py-2"
             >
               Añadir al carrito
             </button>
